@@ -1,40 +1,63 @@
+// filepath: i:\Go\scrawler\scrawler.go
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"math/rand"
+	"net/url"
+	"os"
 
-    "github.com/gocolly/colly/v2"
+	"github.com/gocolly/colly/v2"
 )
 
-func setupCollector() *colly.Collector {
-    // 设置 GODEBUG 环境变量
-    os.Setenv("GODEBUG", "tlsrsakex=1")
+func handleBaseHTML(e *colly.HTMLElement, baseURL string, maxLinks int) {
+	e.ForEach(".news_title a", func(i int, el *colly.HTMLElement) {
+		if i >= maxLinks {
+			return // 达到最大链接数，停止处理
+		}
 
-    // 创建 Colly Collector
-    c := colly.NewCollector(
-        colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"),
-    )
+		// 获取相对链接
+		relativeLink := el.Attr("href")
 
-    // 设置 HTML 处理逻辑
-    c.OnHTML("h1", func(e *colly.HTMLElement) {
-        content := e.Text
-        fmt.Printf("content: %v\n", content)
-    })
+		// 将相对链接转换为绝对链接
+		base, _ := url.Parse(baseURL)
+		absoluteLink := base.ResolveReference(&url.URL{Path: relativeLink}).String()
+		fmt.Fprintf(os.Stderr, "absoluteLink: %v\n", absoluteLink)
 
-    // 设置错误处理逻辑
-    c.OnError(func(r *colly.Response, err error) {
-        fmt.Fprintf(os.Stderr, "Request URL: %v failed with response: %v, error: %v\n", r.Request.URL, r, err)
-    })
-
-    return c
+		// 访问新的链接
+		el.Request.Visit(absoluteLink)
+	})
 }
 
-func startScraping(c *colly.Collector, url string) {
-    c.Visit(url)
+func handleSubHTML(e *colly.HTMLElement) {
+	// 自定义处理子 URL 的逻辑
+	title := e.DOM.Find("h1").Text()
+	fmt.Printf("Sub URL Content: %v\n", title)
 }
 
-func main() {
-    collector := setupCollector()
-    startScraping(collector, "https://jw.nju.edu.cn/88/0f/c26263a755727/page.htm")
+func startScraping(c *colly.Collector, baseURL string, maxLinks int) {
+	c.OnRequest(func(r *colly.Request) {
+		// 随机选择一个 User-Agent
+		randomUserAgent := UserAgents[rand.Intn(len(UserAgents))]
+		r.Headers.Set("User-Agent", randomUserAgent)
+		// fmt.Printf("Using User-Agent: %s\n", randomUserAgent)
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Fprintf(os.Stderr, "Request URL: %v failed with response: %v, error: %v\n", r.Request.URL, r, err)
+	})
+
+	// 注册一次 OnHTML，根据深度调用不同的处理逻辑
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		if e.Request.Depth == 1 {
+			// Base URL 的处理逻辑
+			handleBaseHTML(e, baseURL, maxLinks)
+		} else {
+			// 子 URL 的处理逻辑
+			handleSubHTML(e)
+		}
+	})
+
+	c.Visit(baseURL)
+	// c.Wait()
 }
