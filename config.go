@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+const debug = true
+
 func init() {
 	// 在 main 函数之前执行
 	os.Setenv("GODEBUG", "tlsrsakex=1")

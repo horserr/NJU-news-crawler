@@ -23,7 +23,7 @@ func handleBaseHTML(e *colly.HTMLElement, baseURL string, maxLinks int) {
 		// 将相对链接转换为绝对链接
 		base, _ := url.Parse(baseURL)
 		absoluteLink := base.ResolveReference(&url.URL{Path: relativeLink}).String()
-		fmt.Fprintf(os.Stderr, "absoluteLink: %v\n", absoluteLink)
+		debugLog(os.Stderr, "absoluteLink: %v\n", absoluteLink)
 
 		// 访问新的链接
 		el.Request.Visit(absoluteLink)
