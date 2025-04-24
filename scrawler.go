@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 )
 
@@ -32,7 +33,17 @@ func handleBaseHTML(e *colly.HTMLElement, baseURL string, maxLinks int) {
 func handleSubHTML(e *colly.HTMLElement) {
 	// 自定义处理子 URL 的逻辑
 	title := e.DOM.Find("h1").Text()
-	fmt.Printf("Sub URL Content: %v\n", title)
+	fmt.Printf("Title: %v\n", title)
+	e.ForEach(".read p", func(_ int, para *colly.HTMLElement) {
+		contentList := para.DOM.Find("span")
+
+		if contentList.Size() > 0 {
+			contentList.Each(func(_ int, span *goquery.Selection) {
+				fmt.Printf("%v", span.Text())
+			})
+			fmt.Println()
+		}
+	})
 }
 
 func startScraping(c *colly.Collector, baseURL string, maxLinks int) {
