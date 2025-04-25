@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const debug = true
+const DEBUG = true
 
 func init() {
 	// 在 main 函数之前执行

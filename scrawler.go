@@ -6,9 +6,21 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
+)
+
+type Content struct {
+	URL       string `json:"url"`
+	CreatedAt string `json:"created_at"`
+	Text      string `json:"text"`
+}
+
+var (
+	results []Content  // 存储所有结果
+	mutex   sync.Mutex // 用于保护 results 的并发写入
 )
 
 func handleBaseHTML(e *colly.HTMLElement, baseURL string, maxLinks int) {
@@ -29,21 +41,39 @@ func handleBaseHTML(e *colly.HTMLElement, baseURL string, maxLinks int) {
 		el.Request.Visit(absoluteLink)
 	})
 }
-
 func handleSubHTML(e *colly.HTMLElement) {
-	// 自定义处理子 URL 的逻辑
-	title := e.DOM.Find("h1").Text()
-	fmt.Printf("Title: %v\n", title)
+	// 获取当前页面的 URL
+	currentURL := e.Request.URL.String()
+
+	// 获取创建者信息（假设从 meta 标签中获取）
+	created_at := e.DOM.Find(".arti_metas .arti_update").Text()
+	created_at = extractDate(created_at) // 提取日期
+
+	debugLog(os.Stderr, "created_at: %v\n", created_at)
+
+	// 获取页面内容
+	var textContent string
 	e.ForEach(".read p", func(_ int, para *colly.HTMLElement) {
 		contentList := para.DOM.Find("span")
 
 		if contentList.Size() > 0 {
 			contentList.Each(func(_ int, span *goquery.Selection) {
-				fmt.Printf("%v", span.Text())
+				textContent += span.Text() + " "
 			})
-			fmt.Println()
+			textContent += "\n"
 		}
 	})
+	// 创建结果对象
+	result := Content{
+		URL:       currentURL,
+		CreatedAt: created_at,
+		Text:      textContent,
+	}
+
+	// 使用 Mutex 保护并发写入
+	mutex.Lock()
+	results = append(results, result)
+	mutex.Unlock()
 }
 
 func startScraping(c *colly.Collector, baseURL string, maxLinks int) {
@@ -70,5 +100,5 @@ func startScraping(c *colly.Collector, baseURL string, maxLinks int) {
 	})
 
 	c.Visit(baseURL)
-	// c.Wait()
+	c.Wait()
 }
