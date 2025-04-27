@@ -1,6 +1,8 @@
-module github.com/horserr/goScrawler
+module goScrawler
 
 go 1.24.2
+
+// replace
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.2 // indirect
