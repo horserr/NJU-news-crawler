@@ -5,10 +5,16 @@ import (
 	"goScrawler/scrawler"
 	"goScrawler/utils"
 	"os"
+	"regexp"
 )
 
 func main() {
 	results := scrawler.Start()
+
+	// re := regexp.MustCompile(`[\p{C}]`)
+	// for i := range results {
+	// 	results[i].Article.Title = re.ReplaceAllString(results[i].Article.Title, "")
+	// }
 
 	jsonData, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {

@@ -1,9 +1,10 @@
 package scrawler
 
 import (
-	"github.com/gocolly/colly/v2"
 	"net/http/cookiejar"
 	"time"
+
+	"github.com/gocolly/colly/v2"
 )
 
 // Config 结构体定义
@@ -24,8 +25,8 @@ var config = Config{
 		"Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
 		"Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
 	},
-	maxCatalogPages: 5,
-	maxDetailPages:  30,
+	maxCatalogPages: 10,
+	maxDetailPages:  40,
 	baseURL:         "https://jw.nju.edu.cn/ggtz/list.htm",
 }
 

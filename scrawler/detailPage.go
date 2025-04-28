@@ -1,13 +1,15 @@
 package scrawler
 
 import (
-	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
+
+	"goScrawler/utils"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
-	"goScrawler/utils"
 )
 
 var (
@@ -36,13 +38,32 @@ func handleDetailPage(e *colly.HTMLElement) {
 	detailMutex.Unlock()
 
 	// 获取当前页面的 URL
-	currentURL := e.Request.URL.String()
-	created_at := e.DOM.Find(".arti_metas .arti_update").Text()
-	created_at = utils.ExtractDate(created_at) // 提取日期
+	meta := buildMeta(e)
+	article := buildArticle(e)
+	content := content{
+		URL:       e.Request.URL.String(),
+		Meta:      meta,
+		Article:   article,
+		ScrapedAt: time.Now().Format("2006-01-02"),
+	}
 
-	utils.DebugLog(os.Stdout, utils.INFO, "Processed detail page: %s\n", currentURL)
+	resultsMutex.Lock()
+	results = append(results, content)
+	resultsMutex.Unlock()
+}
 
-	// 获取页面内容
+func buildMeta(e *colly.HTMLElement) meta {
+	meta := meta{}
+	meta.PostAt = utils.ExtractDate(e.DOM.Find(".arti_metas .arti_update").Text())
+	meta.Publisher = e.DOM.Find(".arti_metas .arti_publisher").Text()
+	meta.Views, _ = strconv.Atoi(e.DOM.Find(".arti_metas .arti_views > span").Text())
+	return meta
+}
+
+func buildArticle(e *colly.HTMLElement) article {
+	article := article{}
+	article.Title = e.DOM.Find("h1.arti_title").Text()
+
 	var textContent string
 	e.ForEach(".read p", func(_ int, para *colly.HTMLElement) {
 		contentList := para.DOM.Find("span")
@@ -54,13 +75,7 @@ func handleDetailPage(e *colly.HTMLElement) {
 			textContent += "\n"
 		}
 	})
+	article.Body = textContent
 
-	// 使用 Mutex 保护并发写入
-	resultsMutex.Lock()
-	results = append(results, Content{
-		URL:       currentURL,
-		CreatedAt: created_at,
-		Text:      textContent,
-	})
-	resultsMutex.Unlock()
+	return article
 }

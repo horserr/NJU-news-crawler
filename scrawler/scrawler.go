@@ -9,15 +9,21 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-var (
-	results      []Content
-	resultsMutex = &sync.Mutex{}
-)
+type article struct {
+	Title string `json:"title"`
+	Body  string `json:"body"`
+}
+type meta struct {
+	Publisher string `json:"publisher"`
+	PostAt    string `json:"post_at"`
+	Views     int    `json:"views"`
+}
 
-type Content struct {
-	URL       string `json:"url"`
-	CreatedAt string `json:"created_at"`
-	Text      string `json:"text"`
+type content struct {
+	URL     string  `json:"url"`
+	Meta    meta    `json:"meta"`
+	Article article `json:"article"`
+	ScrapedAt string  `json:"scraped_at"`
 }
 
 type pageHandler struct {
@@ -25,7 +31,12 @@ type pageHandler struct {
 	handler    func(*colly.HTMLElement)
 }
 
-func Start() []Content {
+var (
+	results      []content
+	resultsMutex = &sync.Mutex{}
+)
+
+func Start() []content {
 	c := setupCollector()
 
 	// 使用切片存储页面类型判断函数和处理函数的映射
