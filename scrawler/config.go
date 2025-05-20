@@ -7,12 +7,17 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
+// CrawlerConfig exported configuration for the crawler
+type CrawlerConfig struct {
+	MaxCatalogPages int
+	MaxDetailPages  int
+}
+
 // Config 结构体定义
 type Config struct {
 	userAgents      []string
 	maxCatalogPages int
 	maxDetailPages  int
-	maxDepth        int
 	baseURL         string
 }
 
@@ -30,21 +35,41 @@ var config = Config{
 	baseURL:         "https://jw.nju.edu.cn/ggtz/list.htm",
 }
 
-func setupCollector() *colly.Collector {
+// setupParentCollector creates and configures the collector for catalog pages
+func setupParentCollector() *colly.Collector {
 	jar, _ := cookiejar.New(nil)
 
-	// 创建 Colly Collector
 	c := colly.NewCollector(
 		colly.Async(true),
-		// colly.MaxDepth(10),
 	)
 	c.SetCookieJar(jar)
 
+	// Catalog pages typically need less aggressive crawling
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
-		Parallelism: 12,
+		Parallelism: 2,
+		Delay:       500 * time.Millisecond,
+		RandomDelay: 200 * time.Millisecond,
+	})
+
+	return c
+}
+
+// setupChildCollector creates and configures the collector for detail pages
+func setupChildCollector() *colly.Collector {
+	jar, _ := cookiejar.New(nil)
+
+	c := colly.NewCollector(
+		colly.Async(true),
+	)
+	c.SetCookieJar(jar)
+
+	// Detail pages can be crawled more aggressively in parallel
+	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
+		Parallelism: 8,
 		Delay:       300 * time.Millisecond,
-		RandomDelay: 250 * time.Millisecond,
+		RandomDelay: 150 * time.Millisecond,
 	})
 
 	return c
