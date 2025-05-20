@@ -1,11 +1,10 @@
 package scrawler
 
 import (
-	"goScrawler/utils"
 	"math/rand"
-	"os"
 	"sync"
 
+	"log/slog"
 	"github.com/gocolly/colly/v2"
 )
 
@@ -13,6 +12,7 @@ type article struct {
 	Title string `json:"title"`
 	Body  string `json:"body"`
 }
+
 type meta struct {
 	Publisher string `json:"publisher"`
 	PostAt    string `json:"post_at"`
@@ -20,9 +20,9 @@ type meta struct {
 }
 
 type content struct {
-	URL     string  `json:"url"`
-	Meta    meta    `json:"meta"`
-	Article article `json:"article"`
+	URL       string  `json:"url"`
+	Meta      meta    `json:"meta"`
+	Article   article `json:"article"`
 	ScrapedAt string  `json:"scraped_at"`
 }
 
@@ -46,13 +46,14 @@ func Start() []content {
 	}
 
 	c.OnRequest(func(r *colly.Request) {
+		// set random User-Agent
 		randomUserAgent := config.userAgents[rand.Intn(len(config.userAgents))]
 		r.Headers.Set("User-Agent", randomUserAgent)
-		utils.DebugLog(os.Stdout, utils.DEBUG, "Using User-Agent: %s", randomUserAgent)
+		slog.Debug("Using User-Agent", slog.String("user_agent", randomUserAgent))
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		utils.DebugLog(os.Stderr, utils.ERROR, "Request URL: %v failed with response: %v, error: %v\n", r.Request.URL, r, err)
+		slog.Error("Request failed", slog.String("url", r.Request.URL.String()), slog.String("error", err.Error()))
 	})
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
@@ -62,7 +63,7 @@ func Start() []content {
 				return
 			}
 		}
-		utils.DebugLog(os.Stderr, utils.WARN, "No handler found for URL: %s\n", e.Request.URL.String())
+		slog.Warn("No handler found for URL", slog.String("url", e.Request.URL.String()))
 	})
 
 	c.Visit(config.baseURL)

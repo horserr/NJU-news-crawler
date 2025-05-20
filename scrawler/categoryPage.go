@@ -1,7 +1,7 @@
 package scrawler
 
 import (
-	"os"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -31,14 +31,14 @@ func handleCategoryPage(e *colly.HTMLElement) {
 		return
 	}
 	catalogPageCount++
-	utils.DebugLog(os.Stdout, utils.DEBUG, "Processing catalog page: %vth %s\n", catalogPageCount, e.Request.URL.String())
+	slog.Debug("Processing catalog page", slog.Int("page_count", catalogPageCount), slog.String("url", e.Request.URL.String()))
 	catalogMutex.Unlock()
 
 	record_total_count := e.DOM.Find("em.all_count").Text()
-	utils.DebugLog(os.Stdout, utils.INFO, "record_count: %v\n", record_total_count)
+	slog.Debug("Record count", slog.String("count", record_total_count))
 
 	page_count := e.DOM.Find("em.all_pages").Text()
-	utils.DebugLog(os.Stdout, utils.INFO, "page_count: %v\n", page_count)
+	slog.Debug("Page count", slog.String("count", page_count))
 
 	e.ForEach(".news_title a", func(_ int, el *colly.HTMLElement) {
 		e.Request.Visit(e.Request.AbsoluteURL(el.Attr("href")))
@@ -49,5 +49,5 @@ func handleCategoryPage(e *colly.HTMLElement) {
 		panic("Next page")
 	}
 	e.Request.Visit(e.Request.AbsoluteURL(nextPage))
-	utils.DebugLog(os.Stdout, utils.DEBUG, "Next page: %v\n", nextPage)
+	slog.Debug("Next page", slog.String("url", nextPage))
 }

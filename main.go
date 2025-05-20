@@ -3,9 +3,8 @@ package main
 import (
 	"encoding/json"
 	"goScrawler/scrawler"
-	"goScrawler/utils"
+	"log/slog"
 	"os"
-	"regexp"
 )
 
 func main() {
@@ -27,5 +26,5 @@ func main() {
 		panic(err)
 	}
 
-	utils.DebugLog(os.Stdout, utils.INFO, "Write JSON data to file: %s", fileName)
+	slog.Info("Write JSON data to file", slog.String("file_name", fileName))
 }

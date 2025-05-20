@@ -36,7 +36,7 @@ func setupCollector() *colly.Collector {
 	// 创建 Colly Collector
 	c := colly.NewCollector(
 		colly.Async(true),
-		colly.MaxDepth(10),
+		// colly.MaxDepth(10),
 	)
 	c.SetCookieJar(jar)
 
