@@ -1,4 +1,4 @@
-# GoScrawler
+# GoCrawler
 
 A Parent-Child web crawler built in Go using the Colly framework. This crawler is designed to efficiently scrape websites by using separate crawlers for category pages and detail pages.
 
